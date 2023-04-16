@@ -31,8 +31,8 @@ class MyHomePage extends StatelessWidget {
     var signature;
     //SignatureController signatureController_1 = SignatureController();
     //signature =  signatureController_1.;
-    SignatureController signatureController_1 = SignatureController();
-    SignatureController signatureController_2 = SignatureController();
+    SignatureController signatureController_1 = SignatureController().obs as SignatureController;
+    SignatureController signatureController_2 = SignatureController().obs as SignatureController;
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
