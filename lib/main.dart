@@ -1,3 +1,5 @@
+import 'dart:core';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:signature/signature.dart';
@@ -26,13 +28,21 @@ class MyHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     var pointList_1 = [];
-    var pointList_2 = [];
-    var signature;
+
+    var startIndex = 0;
+
+    List signature;
+    var test = {"lines":[]};
+    List<Point> test2 = [];
+
+    var copySignature = false.obs;
     //SignatureController signatureController_1 = SignatureController();
     //signature =  signatureController_1.;
-    SignatureController signatureController_1 = SignatureController().obs as SignatureController;
-    SignatureController signatureController_2 = SignatureController().obs as SignatureController;
+    SignatureController signatureController_1 = SignatureController();
+    SignatureController signatureController_2 = SignatureController();
+
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
@@ -45,12 +55,25 @@ class MyHomePage extends StatelessWidget {
                 shape: const RoundedRectangleBorder(side: BorderSide(color: Colors.blue, width: 2)),
                 child: Signature(
                   controller: signatureController_1 = SignatureController(onDrawEnd: () {
-                    signature = signatureController_1.points;
-                    for (var elements in signature) {
-                      pointList_1.add([elements.offset.dx.toStringAsFixed(2), elements.offset.dy.toStringAsFixed(2)]);
+                    signature = [];
+                    pointList_1 = [];
+
+                    signature = signatureController_1.points.sublist(startIndex);
+                    startIndex = signatureController_1.points.length;
+                    for (Point elements in signature) {
+                      pointList_1.add([elements.offset.dx.toPrecision(2), elements.offset.dy.toPrecision(2)]);
                     }
-                    pointList_2.add(pointList_1);
-                  }),
+                    print(signature.length);
+                    print(startIndex);
+                    print(pointList_1);
+                    print(pointList_1.length);
+                    test["lines"]?.add(pointList_1);
+                    print(test["lines"]?.length);
+                    test["lines"]?.forEach((element) {print(element.length);});
+                  },
+                    penStrokeWidth: 2,
+                    penColor: Colors.red,
+                  ),
                   backgroundColor: Colors.white,
                   height: 300,
                   width: double.infinity,
@@ -68,10 +91,14 @@ class MyHomePage extends StatelessWidget {
                         height: 40,
                         child: InkWell(
                             onTap: () {
-                              signature.clear();
-                              pointList_1.clear();
-                              pointList_2.clear();
+                              signature = [];
+                              pointList_1 = [];
                               signatureController_1.clear();
+                              signatureController_2.clear();
+                              test["lines"] = [];
+                              test2 = [];
+                              startIndex = 0;
+                              copySignature.value = false;
                             },
                             child: const Text("Tap To clear Screen")),
                       ),
@@ -88,7 +115,20 @@ class MyHomePage extends StatelessWidget {
                         child: InkWell(
                             onTap: () {
                               print("****************************************DATA#########################");
-                              print(pointList_2);
+                              //for (var element in signatureController_1.points) {pointList_2.add(element.offset);}
+
+                              for(var i = 0; i < test["lines"]!.length; i++ ){
+                                var v = test["lines"]?[i];
+                                print(v.length);
+                                for(var j=0;j<v.length;j++){
+                                  if (j==0 || j == v.length-1) {
+                                    test2.add(Point(Offset(v[j][0], v[j][1]),PointType.tap,1.0));
+                                  } else {
+                                    test2.add(Point(Offset(v[j][0], v[j][1]),PointType.move,1.0));
+                                  }
+                                }
+                              }
+                              print(test2);
                             },
                             child: const Text("Tap To Show Data")),
                       ),
@@ -103,9 +143,12 @@ class MyHomePage extends StatelessWidget {
                       child: SizedBox(
                         height: 40,
                         child: InkWell(
-                            onTap: () {
+                            onTap: () async {
+                              copySignature.value = true;
                               signatureController_2 = SignatureController(
-                                points: collectedPoint(listPoint: pointList_2),
+                                //onDrawStart: onDrawStart(),
+                                points: test2,
+                                //points: signatureController_1.points,
                                 penStrokeWidth: 2,
                                 penColor: Colors.red,
                                 exportBackgroundColor: Colors.blue,
@@ -120,15 +163,19 @@ class MyHomePage extends StatelessWidget {
               const SizedBox(
                 height: 10,
               ),
-              Material(
-                  shape: const RoundedRectangleBorder(side: BorderSide(color: Colors.blue, width: 2)),
-                  child: Signature(
-                    controller: signatureController_2,
-                    backgroundColor: Colors.white,
-                    height: 300,
-                    width: double.infinity,
-                  ),
-                )
+              Obx(() {
+                return copySignature.value != false
+                    ? Material(
+                        shape: const RoundedRectangleBorder(side: BorderSide(color: Colors.blue, width: 2)),
+                        child: Signature(
+                          controller: signatureController_2,
+                          backgroundColor: Colors.white,
+                          height: 300,
+                          width: double.infinity,
+                        ),
+                      )
+                    : const SizedBox();
+              })
             ],
           ),
         ),
@@ -137,16 +184,22 @@ class MyHomePage extends StatelessWidget {
   }
 
   collectedPoint({listPoint}) {
-    List<Point>? damy = [];
+    List<Point>? damy_1 = [];
+    List<Point>? damy_2 = [];
 
     for (int i = 0; i < listPoint.length; i++) {
-      for (int j = 0; j < listPoint[i].length; j++) {
-        //print(listPoint[i][j][0]);
-        //print(listPoint[i][j][1]);
-        damy.add(Point(Offset(double.parse(listPoint[i][j][0]), double.parse(listPoint[i][j][1])), PointType.move, 0.0));
-      }
-    }
-    return damy;
-  }
+      // for (int j = 0; j < listPoint[i].length; j++) {
+      //   //print(listPoint[i][j][0]);
+      //   //print(listPoint[i][j][1]);
+      //   damy_1.add(Point(Offset(double.parse(listPoint[i][j][0]), double.parse(listPoint[i][j][1])), PointType.move, 0.0));
+      // }
 
+      //damy_1.add(Point(Offset(double.parse(listPoint[i][0]), double.parse(listPoint[i][1])), PointType.move, 0.0));
+      damy_1.add(Point(Offset(listPoint[i][0], listPoint[i][1]), PointType.move, 0.0));
+
+      //damy_2.add(damy_1 as Point);
+    }
+    return damy_1;
+
+  }
 }
